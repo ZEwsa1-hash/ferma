@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { incrementCartCount, useCartCount } from "../cartStore";
+import { CartDrawer } from "../CartDrawer";
+import { addCartItem, CartProduct, useCartCount } from "../cartStore";
 import { CatalogFavoriteButton } from "../catalog/CatalogFavoriteButton";
 
 type NavItem = {
@@ -50,17 +51,25 @@ export function ProductPageInteractive({
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const cartCount = useCartCount();
   const [payStatus, setPayStatus] = useState<"idle" | "added">("idle");
   const payStatusTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedImage = product.images[activeImage] ?? product.images[0];
-  const addToCart = (count = 1) => {
-    incrementCartCount(count);
+  const addToCart = (item: CartProduct, count = 1) => {
+    addCartItem(item, count);
   };
 
   const handlePayClick = () => {
-    addToCart(quantity);
+    addToCart(
+      {
+        image: selectedImage.src,
+        name: product.name,
+        price: product.price,
+      },
+      quantity,
+    );
     setPayStatus("added");
 
     if (payStatusTimer.current) {
@@ -108,6 +117,7 @@ export function ProductPageInteractive({
             }`}
             type="button"
             aria-label={`Cart, ${cartCount} items`}
+            onClick={() => setIsCartOpen(true)}
           >
             <span className="bagIcon" aria-hidden="true" />
             <span className="catalogCartCount" aria-hidden="true">
@@ -123,6 +133,7 @@ export function ProductPageInteractive({
             }`}
             type="button"
             aria-label={`Cart, ${cartCount} items`}
+            onClick={() => setIsCartOpen(true)}
           >
             <span className="bagIcon" aria-hidden="true" />
             <span className="catalogCartCount" aria-hidden="true">
@@ -290,14 +301,6 @@ export function ProductPageInteractive({
                   src={item.image}
                 />
                 <CatalogFavoriteButton productName={item.name} />
-                <button
-                  className="productCardCart"
-                  type="button"
-                  aria-label={`Add ${item.name} to cart`}
-                  onClick={() => addToCart()}
-                >
-                  <span className="bagIcon" aria-hidden="true" />
-                </button>
               </div>
 
               <div className="catalogProductInfo">
@@ -330,7 +333,13 @@ export function ProductPageInteractive({
                 <button
                   className="productRelatedAddButton"
                   type="button"
-                  onClick={() => addToCart()}
+                  onClick={() =>
+                    addToCart({
+                      image: item.image,
+                      name: item.name,
+                      price: item.price,
+                    })
+                  }
                 >
                   Add to cart
                 </button>
@@ -385,6 +394,7 @@ export function ProductPageInteractive({
         </div>
         <p className="footerLegal">&copy; 2026 Velora Farm. All rights reserved</p>
       </footer>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </main>
   );
 }

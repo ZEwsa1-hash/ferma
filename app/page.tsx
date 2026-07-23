@@ -3,6 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { CartDrawer } from "./CartDrawer";
+import { useCartCount } from "./cartStore";
 
 const navItems = [
   { label: "About", href: "#about" },
@@ -15,27 +17,27 @@ const navItems = [
 
 const products = [
   {
-    label: "ARTISAN CHEESES",
+    label: "Artisan Cheeses",
     image: "/assets/products/artisan-cheeses.png",
     href: "/catalog",
   },
   {
-    label: "DAIRY PRODUCTS",
+    label: "Dairy Products",
     image: "/assets/products/dairy-products.png",
     href: "/catalog?category=dairy",
   },
   {
-    label: "PREMIUM MEAT",
+    label: "Premium Meat",
     image: "/assets/products/premium-meat.png",
     href: "/catalog?category=meat",
   },
   {
-    label: "VEGETABLES & GREENS",
+    label: "Vegetables & Greens",
     image: "/assets/products/vegetables-greens.png",
     href: "/catalog?category=vegetables",
   },
   {
-    label: "NATURAL HONEY",
+    label: "Natural Honey",
     image: "/assets/products/natural-honey.png",
     imageWidth: 736,
     imageHeight: 1104,
@@ -102,6 +104,8 @@ export default function Home() {
   const [activeGallery, setActiveGallery] = useState(2);
   const [galleryDirection, setGalleryDirection] = useState<-1 | 1>(1);
   const [activeReview, setActiveReview] = useState(0);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const cartCount = useCartCount();
   const productsViewportRef = useRef<HTMLDivElement>(null);
   const galleryRailRef = useRef<HTMLDivElement>(null);
   const reviewsScrollerRef = useRef<HTMLDivElement>(null);
@@ -253,14 +257,29 @@ export default function Home() {
           </nav>
 
           <div className="headerTools" aria-label="Header tools">
-            <button type="button" aria-label="Switch language to English">
+            <button
+              className="languageButton"
+              type="button"
+              aria-label="Switch language to English"
+            >
               EN
+              <span aria-hidden="true" />
             </button>
             <button className="iconButton" type="button" aria-label="Wishlist">
               <span className="heartIcon" aria-hidden="true" />
             </button>
-            <button className="iconButton" type="button" aria-label="Cart">
+            <button
+              className={`iconButton catalogCartButton ${
+                cartCount > 0 ? "hasItems" : ""
+              }`}
+              type="button"
+              aria-label={`Cart, ${cartCount} items`}
+              onClick={() => setIsCartOpen(true)}
+            >
               <span className="bagIcon" aria-hidden="true" />
+              <span className="catalogCartCount" aria-hidden="true">
+                {cartCount}
+              </span>
             </button>
           </div>
 
@@ -272,12 +291,12 @@ export default function Home() {
         </header>
 
         <div className="heroCopy">
-          <h1>NATURE&apos;S FINEST, PERFECTED SLOWLY</h1>
+          <h1>Nature&rsquo;s Finest, Perfected Slowly</h1>
           <p>
-            Our farm is more than just production - it&apos;s a lifestyle inspired
-            by nature. Here you can explore our products, discover the story
-            behind the farm, enjoy countryside experiences, and order fresh
-            products directly from the source.
+            Our farm is more than just production &mdash; it&rsquo;s a lifestyle
+            inspired by nature. Here you can explore our products, discover the
+            story behind the farm, enjoy countryside experiences, and order
+            fresh products directly from the source.
           </p>
         </div>
       </section>
@@ -635,6 +654,7 @@ export default function Home() {
         </div>
         <p className="footerLegal">&copy; 2026 Velora Farm. All rights reserved</p>
       </footer>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </main>
   );
 }

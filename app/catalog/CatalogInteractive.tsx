@@ -11,7 +11,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { incrementCartCount, useCartCount } from "../cartStore";
+import { CartDrawer } from "../CartDrawer";
+import { addCartItem, CartProduct, useCartCount } from "../cartStore";
 import { CatalogFavoriteButton } from "./CatalogFavoriteButton";
 
 type NavItem = {
@@ -86,6 +87,7 @@ export function CatalogInteractive({
   products,
 }: CatalogInteractiveProps) {
   const cartCount = useCartCount();
+  const [isCartOpen, setIsCartOpen] = useState(false);
   const [flyItems, setFlyItems] = useState<FlyItem[]>([]);
   const [searchState, setSearchState] = useState({
     category: activeCategory,
@@ -113,7 +115,10 @@ export function CatalogInteractive({
     });
   }, [normalizedSearchQuery, products]);
 
-  const addToCart = (event: MouseEvent<HTMLButtonElement>) => {
+  const addToCart = (
+    event: MouseEvent<HTMLButtonElement>,
+    product: CartProduct,
+  ) => {
     const startRect = event.currentTarget.getBoundingClientRect();
     const visibleCart =
       [desktopCartRef, mobileCartRef]
@@ -128,7 +133,7 @@ export function CatalogInteractive({
         }) ?? desktopCartRef.current;
     const targetRect = visibleCart?.getBoundingClientRect();
 
-    incrementCartCount();
+    addCartItem(product);
 
     if (!targetRect) {
       return;
@@ -167,6 +172,7 @@ export function CatalogInteractive({
       type="button"
       aria-label={`Cart, ${cartCount} items`}
       ref={ref}
+      onClick={() => setIsCartOpen(true)}
     >
       <span className="bagIcon" aria-hidden="true" />
       <span className="catalogCartCount" aria-hidden="true">
@@ -315,7 +321,16 @@ export function CatalogInteractive({
                   <p>{product.description}</p>
                 </div>
                 <strong>{product.price}</strong>
-                <button type="button" onClick={addToCart}>
+                <button
+                  type="button"
+                  onClick={(event) =>
+                    addToCart(event, {
+                      image: product.image,
+                      name: product.name,
+                      price: product.price,
+                    })
+                  }
+                >
                   Add to cart
                 </button>
               </div>
@@ -397,6 +412,7 @@ export function CatalogInteractive({
           />
         ))}
       </div>
+      <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </main>
   );
 }
