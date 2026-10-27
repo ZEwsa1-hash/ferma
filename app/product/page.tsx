@@ -9,7 +9,7 @@ const navItems = [
   { label: "Contact", href: "/#contact" },
 ];
 
-const product: ProductPageProduct = {
+export const product: ProductPageProduct = {
   name: "Fresh Milk",
   description:
     "Pure farm-fresh milk with a rich and natural flavor, sourced from healthy pasture-raised cows and processed with care to preserve its freshness and nutritional value",
@@ -42,7 +42,7 @@ const product: ProductPageProduct = {
   ],
 };
 
-const relatedProducts = [
+export const relatedProducts = [
   {
     name: "Fresh Milk",
     description: "Pure, fresh, and naturally creamy",

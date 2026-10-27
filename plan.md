@@ -1,5 +1,7 @@
 # Plan: Figma-Exact Next.js Rebuild
 
+> Status update (2026-10-26): The original rebuild phases below are historical planning notes. The current implementation and revised priorities are documented in **Current Project Review And Next Steps** at the end of this file. The site is an informational product showcase; purchasing is out of scope.
+
 ## Goal
 Rebuild the current Next.js page from the supplied Figma exports in `assest`, without invented copy or visual guesses.
 
@@ -245,3 +247,34 @@ Acceptance:
 3. Replace current placeholder `app/page.tsx` content with mockup-derived structure.
 4. Replace current approximate CSS with measured desktop/mobile styles.
 5. Run verification and compare against the supplied screenshots.
+
+## Current Project Review And Next Steps (2026-10-26)
+
+### Confirmed Scope
+
+- Velora Farm is a promotional website and product catalog, without online purchasing or order placement.
+- Product cards and detail pages may show descriptions, photos, and prices if they belong to the approved design. They must not imply that payment or checkout is available.
+- A backend for orders, payment integration, and persistent shopping cart are not required.
+
+### Current Implementation
+
+- Next.js 16 App Router, React 19, and TypeScript.
+- Routes: homepage (`/`), category catalog (`/catalog`), and one product detail page (`/product`, currently Fresh Milk).
+- Products, prices, ratings, and reviews are hard-coded. The catalog has category switching and client-side name search.
+- The homepage has responsive sections and a video hero. The current cart uses browser `localStorage`.
+- No automated tests were found. Most styling is in one `app/globals.css` file (about 2,470 lines).
+
+### Findings And Priorities
+
+1. **Restore reliable verification.** `npm run typecheck` and `npm run build` currently fail on malformed generated `.next/dev/types/routes.d.ts` (duplicate lines after the closing declaration), after the application compiles. Regenerate the Next.js output, then rerun both checks. If the error returns, investigate the generator or concurrent development process before changing application types. A targeted `npx eslint app next.config.ts` check passed; the full `npm run lint` run was interrupted after it produced no result for an extended period.
+2. **Align the interface with the no-purchase scope.** Remove the cart drawer and count, `Add to cart`, `Pay`, `Checkout`, and quantity controls from the public flow. Replace purchase calls to action with navigation or product information where appropriate. Remove `cartStore.ts` once it has no callers. Do not add checkout, order, or payment infrastructure.
+3. **Resolve controls that currently have no action.** The language selector, header wishlist button, and mobile menu appear interactive but have no behavior. Either implement a useful behavior within the informational-site scope or present them as non-interactive design elements. Product favorite state currently disappears on reload; decide whether favorites are actually part of the site before keeping these buttons.
+4. **Clarify product navigation.** Only Fresh Milk has a detail page. Decide which other products need their own pages; otherwise avoid cards that suggest a missing destination.
+5. **Finish quality checks.** Verify all routes and assets in a browser at desktop and mobile widths, keyboard navigation, visible focus states, and horizontal overflow. Add focused tests only for behavior that remains after the scope cleanup. Continue comparing the layout with the supplied Figma exports; exact Dev Mode values are still unavailable.
+
+### Completion Criteria
+
+- Production build, typecheck, and lint pass.
+- Every visible button and link has a clear, working purpose.
+- No purchase or checkout flow appears anywhere on the site.
+- Homepage, catalog categories, and available product details work on desktop and mobile without broken assets or horizontal scrolling.

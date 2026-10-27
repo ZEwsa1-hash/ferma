@@ -7,13 +7,17 @@ import {
   FormEvent,
   MouseEvent,
   RefObject,
+  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { CartDrawer } from "../CartDrawer";
+import { MobileMenu } from "../MobileMenu";
 import { addCartItem, CartProduct, useCartCount } from "../cartStore";
 import { CatalogFavoriteButton } from "./CatalogFavoriteButton";
+import { CatalogCategory, productSlug } from "./data";
 
 type NavItem = {
   label: string;
@@ -45,10 +49,10 @@ type FlyItem = {
 };
 
 type CatalogInteractiveProps = {
-  activeCategory: string;
+  initialCategory: CatalogCategory;
   categories: CategoryItem[];
   navItems: NavItem[];
-  products: CatalogProduct[];
+  productsByCategory: Record<CatalogCategory, CatalogProduct[]>;
 };
 
 type FlyStyle = CSSProperties & {
@@ -81,24 +85,58 @@ const includesLettersInOrder = (value: string, query: string) => {
 };
 
 export function CatalogInteractive({
-  activeCategory,
+  initialCategory,
   categories,
   navItems,
-  products,
+  productsByCategory,
 }: CatalogInteractiveProps) {
+  const [activeCategory, setActiveCategory] = useState(initialCategory);
+  const products = productsByCategory[activeCategory];
   const cartCount = useCartCount();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [flyItems, setFlyItems] = useState<FlyItem[]>([]);
   const [searchState, setSearchState] = useState({
-    category: activeCategory,
+    category: initialCategory,
     query: "",
   });
+  const categoriesRef = useRef<HTMLElement>(null);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
   const desktopCartRef = useRef<HTMLButtonElement>(null);
   const mobileCartRef = useRef<HTMLButtonElement>(null);
   const flyIdRef = useRef(0);
   const searchQuery =
     searchState.category === activeCategory ? searchState.query : "";
   const normalizedSearchQuery = normalizeSearchText(searchQuery);
+
+  useEffect(() => {
+    const syncCategory = () => {
+      const category = new URLSearchParams(window.location.search).get("category");
+      setActiveCategory(category && category in productsByCategory
+        ? category as CatalogCategory
+        : "cheeses");
+    };
+    window.addEventListener("popstate", syncCategory);
+    return () => window.removeEventListener("popstate", syncCategory);
+  }, [productsByCategory]);
+
+  useLayoutEffect(() => {
+    const updateIndicator = () => {
+      const active = categoriesRef.current?.querySelector<HTMLElement>(".isActive");
+      if (active) setIndicator({ left: active.offsetLeft, width: active.offsetWidth });
+    };
+    updateIndicator();
+    window.addEventListener("resize", updateIndicator);
+    return () => window.removeEventListener("resize", updateIndicator);
+  }, [activeCategory]);
+
+  const selectCategory = (category: CatalogCategory) => {
+    if (category === activeCategory) return;
+    setActiveCategory(category);
+    setSearchState({ category, query: "" });
+    window.history.pushState(null, "", category === "cheeses"
+      ? "/catalog"
+      : `/catalog?category=${category}`);
+  };
 
   const filteredProducts = useMemo(() => {
     if (!normalizedSearchQuery) {
@@ -210,11 +248,7 @@ export function CatalogInteractive({
 
         <div className="catalogMobileTools" aria-label="Mobile header tools">
           {renderCartButton("catalogIconButton catalogCartButton", mobileCartRef)}
-          <span className="catalogMobileBurger" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
+          <MobileMenu items={navItems} />
         </div>
       </header>
 
@@ -250,46 +284,44 @@ export function CatalogInteractive({
           </form>
         </div>
 
-        <nav className="catalogCategories" aria-label="Catalog categories">
+        <nav className="catalogCategories" aria-label="Catalog categories" ref={categoriesRef}>
           {categories.map((category) => (
-            <Link
+            <button
               aria-current={
                 category.value === activeCategory ? "page" : undefined
               }
               className={
                 category.value === activeCategory ? "isActive" : undefined
               }
-              href={
-                category.value === "cheeses"
-                  ? "/catalog"
-                  : `/catalog?category=${category.value}`
-              }
+              onClick={() => selectCategory(category.value as CatalogCategory)}
               key={category.value}
+              type="button"
             >
               {category.label}
-            </Link>
+            </button>
           ))}
+          <span className="catalogCategoryIndicator" aria-hidden="true" style={{ transform: `translateX(${indicator.left}px)`, width: indicator.width }} />
         </nav>
 
         <div className="catalogGrid" id={activeCategory}>
           {filteredProducts.map((product) => (
             <article className="catalogProductCard" key={product.name}>
+              <Link
+                className="catalogProductCardLink"
+                href={`/product/${productSlug(product.name)}`}
+                aria-label={`Open ${product.name}`}
+              />
               <div className="catalogProductPhoto">
-                {product.href ? (
-                  <Link
-                    className="catalogProductPhotoLink"
-                    href={product.href}
-                    aria-label={`Open ${product.name}`}
-                  />
-                ) : null}
                 <Image
                   alt={product.name}
                   className={product.imageClassName}
                   fill
-                  sizes="(max-width: 760px) calc(100vw - 40px), (max-width: 1180px) 30vw, 305px"
+                  sizes="(max-width: 760px) 305px, (max-width: 1180px) 280px, 305px"
                   src={product.image}
                 />
-                <CatalogFavoriteButton productName={product.name} />
+                {!(["honey", "vegetables", "eggs"] as CatalogCategory[]).includes(activeCategory) && (
+                  <CatalogFavoriteButton productName={product.name} />
+                )}
               </div>
 
               <div className="catalogProductInfo">
@@ -352,7 +384,17 @@ export function CatalogInteractive({
           className="footerImage"
           fill
           sizes="100vw"
+          quality={95}
           src="/assets/shared/footer-farm-sunrise.png"
+        />
+        <Image
+          alt=""
+          aria-hidden="true"
+          className="footerImage footerImageMobile"
+          fill
+          sizes="(max-width: 760px) 100vw, 1px"
+          quality={95}
+          src="/assets/shared/footer-farm-sunrise-mobile.png"
         />
         <div className="footerTint" aria-hidden="true" />
         <div className="footerContent">

@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { CartDrawer } from "../CartDrawer";
+import { MobileMenu } from "../MobileMenu";
 import { addCartItem, CartProduct, useCartCount } from "../cartStore";
 import { CatalogFavoriteButton } from "../catalog/CatalogFavoriteButton";
+import { productSlug } from "../catalog/data";
 
 type NavItem = {
   label: string;
@@ -25,6 +27,7 @@ export type ProductPageProduct = {
   reviews: number;
   images: ProductImage[];
   details: string[];
+  category?: string;
 };
 
 type RelatedProduct = {
@@ -140,20 +143,16 @@ export function ProductPageInteractive({
               {cartCount}
             </span>
           </button>
-          <span className="catalogMobileBurger" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </span>
+          <MobileMenu items={navItems} />
         </div>
       </header>
 
       <section className="productShell" aria-labelledby="product-title">
-        <Link className="productBack" href="/catalog?category=dairy" aria-label="Back to catalog">
+        <Link className="productBack" href={`/catalog?category=${product.category ?? "dairy"}`} aria-label="Back to catalog">
           <span aria-hidden="true" />
         </Link>
 
-        <div className="productGallery">
+        <div className={`productGallery ${product.images.length === 1 ? "isSingleImage" : ""}`}>
           <div className="productThumbs" aria-label="Product images">
             {product.images.map((image, index) => (
               <button
@@ -177,7 +176,7 @@ export function ProductPageInteractive({
               sizes="(max-width: 760px) calc(100vw - 40px), 458px"
               src={selectedImage.src}
             />
-            <button
+            {product.images.length > 1 && <button
               className="productImageArrow productImageArrowPrev"
               type="button"
               aria-label="Previous image"
@@ -186,8 +185,8 @@ export function ProductPageInteractive({
                   current === 0 ? product.images.length - 1 : current - 1,
                 )
               }
-            />
-            <button
+            />}
+            {product.images.length > 1 && <button
               className="productImageArrow productImageArrowNext"
               type="button"
               aria-label="Next image"
@@ -196,7 +195,7 @@ export function ProductPageInteractive({
                   current === product.images.length - 1 ? 0 : current + 1,
                 )
               }
-            />
+            />}
           </figure>
         </div>
 
@@ -286,12 +285,17 @@ export function ProductPageInteractive({
       <section className="productRelatedSection" aria-labelledby="related-title">
         <div className="productRelatedTop">
           <h2 id="related-title">Related products</h2>
-          <Link href="/catalog?category=dairy">More...</Link>
+          <Link href={`/catalog?category=${product.category ?? "dairy"}`}>More...</Link>
         </div>
 
         <div className="productRelatedGrid">
           {relatedProducts.map((item) => (
             <article className="catalogProductCard" key={item.name}>
+              <Link
+                className="catalogProductCardLink"
+                href={`/product/${productSlug(item.name)}`}
+                aria-label={`Open ${item.name}`}
+              />
               <div className="catalogProductPhoto">
                 <Image
                   alt={item.name}
@@ -356,7 +360,17 @@ export function ProductPageInteractive({
           className="footerImage"
           fill
           sizes="100vw"
+          quality={95}
           src="/assets/shared/footer-farm-sunrise.png"
+        />
+        <Image
+          alt=""
+          aria-hidden="true"
+          className="footerImage footerImageMobile"
+          fill
+          sizes="(max-width: 760px) 100vw, 1px"
+          quality={95}
+          src="/assets/shared/footer-farm-sunrise-mobile.png"
         />
         <div className="footerTint" aria-hidden="true" />
         <div className="footerContent">
